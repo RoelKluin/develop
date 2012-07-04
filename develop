@@ -1,0 +1,33 @@
+#!/bin/bash
+# (c) Roel Kluin, jul 2012, GPL v2
+
+echo -n "Enter project name, end with return: "
+while read project; do
+  [ -d ~/development/rproject/$project ] || break;
+done
+echo
+
+mkdir -p ~/development/rproject/$project/
+script=dev_$project
+DATE=`date +"%b %Y"`
+
+cat << EOF > ~/bin/$script
+#!/bin/bash
+# (c) Roel Kluin, $DATE, GPL v2
+
+cd ~/development/rproject/$project
+
+# enter more project files to be opened by default here
+gvim -p10 ~/bin/dev_$project \
+  ~/development/rproject/$project/README
+
+# to open sites
+# firefox $site1 &
+# sleep 4
+# firefox -new-tab $site2 &
+EOF
+
+chmod u+x ~/bin/$script
+cd ~/development/rproject/$project
+git init
+source ~/bin/$script
