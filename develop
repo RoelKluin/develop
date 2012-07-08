@@ -1,33 +1,130 @@
 #!/bin/bash
 # (c) Roel Kluin, jul 2012, GPL v2
+# Don't run this - or any - script unless you know what it does,
+# and if you do run it, take responsibility.
 
-echo -n "Enter project name, end with return: "
-while read project; do
-  [ -d ~/development/rproject/$project ] || break;
-done
-echo
+function ask_dir {
+	local project;
+	#TODO: check for spaces, invalid characters
+	while [ 1 ]; do
+		echo -n -e "$1 "
+		read project
+		[ -n "$3" ] && project="$3/$project"
+		local action
+		if [ -d "$project" ]; then
+			if [ $2 -eq 0 ]; then
+				echo "$project already exists"
+				continue;
+			else
+				action=selected
+			fi
+		else
+			if [ $2 -eq 2 ]; then
+				echo "directory $project does not exist"
+				continue;
+			else
+				action=created
+			fi
+			mkdir "$project"
+		fi
+		stat --printf "\n" "$project"
+		[ $? -ne 0 ] && continue;
+		echo -n "$action project "
+	done 1>&2
+	echo -n "$project"
+	echo "..." 1>&2
+}
+bin_dir=~/.develop/command
+if [ -d ~/.develop ]; then
+	source ~/.develop/configuration
+else
+	echo "Setting up develop"
+	mkdir -p $bin_dir
+	cd $bin_dir
+	git init;
+	Develop_project_dir="$(ask_dir "Where should develop projects live?" 1)"
+	cat << EOF > ~/.develop/configuration
+# Develop configuration file, edit to your liking.
 
-mkdir -p ~/development/rproject/$project/
-script=dev_$project
+#Where should develop projects live?
+Develop_project_dir="$Develop_project_dir"
+EOF
+	cat << EOF > ~/.develop/default_license
+(c) $USER, \$DATE
+EOF
+	gvim ~/.develop/default_license
+fi
+existing_project=1
+if [ "$1" = "-n" ]; then
+	existing_project=0
+	shift;
+fi
+if [ -n "$1" ]; then
+	project="$1"
+	projectdir="$Develop_project_dir/$project"
+	if [ -f "$bin_dir/$project" ]; then
+		if [ $existing_project -eq 0 ]; then
+			echo "$project already exists"
+			projectdir="$(ask_dir "Enter new project name:" 0 \
+				"$Develop_project_dir")"
+			project="`basename "projectdir"`" # FIXME: hack
+		else
+			source $bin_dir/$project
+			exit 0;
+		fi
+	else
+		if [ $existing_project -eq 1 ]; then
+			echo "directory $project does not exist"
+			# TODO: create new / choose existing / quit
+			exit 1;
+		fi
+		mkdir "$projectdir"
+		#TODO: stat
+	fi
+fi
+script=$bin_dir/$project
+
 DATE=`date +"%b %Y"`
 
-cat << EOF > ~/bin/$script
-#!/bin/bash
-# (c) Roel Kluin, $DATE, GPL v2
+cp ~/.develop/default_license $projectdir/LICENSE
 
-cd ~/development/rproject/$project
+cat << EOF > $script
+#!/bin/bash
+# copyright: $projectdir/LICENSE
+# Note revision control of this file occurs in directory
+# $bin_dir
+
+projectdir="$projectdir"
+cd "\$projectdir"
 
 # enter more project files to be opened by default here
-gvim -p10 ~/bin/dev_$project \
-  ~/development/rproject/$project/README
+gvim -p10 "$script" \\
+  "\$projectdir/LICENSE"
+  "\$projectdir/README"
+
+git gui&
+
+# copy to commands to be executed in next shells to clipboard
+
+cat << end_of_clip1 | xclip
+cd "\$projectdir"
+cat << end_of_clip2 | xclip
+# enter commands to be executed in console 2 here
+end_of_clip2
+end_of_clip1
 
 # to open sites
-# firefox $site1 &
+# firefox "\$site1" &
 # sleep 4
-# firefox -new-tab $site2 &
+# firefox -new-tab "\$site2" &
 EOF
+cd $bin_dir
 
-chmod u+x ~/bin/$script
-cd ~/development/rproject/$project
+chmod u+x $script
+cd $projectdir
+touch $projectdir/README
 git init
-source ~/bin/$script
+git add $script
+git add $projectdir/LICENSE
+git add $projectdir/README
+source $script
