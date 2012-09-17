@@ -55,6 +55,17 @@ existing_project=1
 if [ "$1" = "-n" ]; then
 	existing_project=0
 	shift;
+elif [ "$1" = "-h" ]; then
+cat <<EOF
+	develop -n <repository name>
+
+Creates new repository.
+
+	develop <repository name>
+
+Edit existing repository
+
+EOF
 fi
 if [ -n "$1" ]; then
 	project="$1"

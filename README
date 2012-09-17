@@ -1,4 +1,14 @@
 develop is intended to get development started quickly.
 
-Requirements: git, gvim, xclip, git-gui
+Requirements:
+git, gvim, xclip, git-gui
 
+Examples:
+
+	develop -n <repository name>
+
+Creates new repository.
+
+	develop <repository name>
+
+Edit existing repository.
