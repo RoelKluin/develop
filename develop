@@ -34,14 +34,11 @@ function ask_dir {
 	echo -n "$project"
 	echo "..." 1>&2
 }
-bin_dir=~/.develop/command
 if [ -d ~/.develop ]; then
 	source ~/.develop/configuration
 else
 	echo "Setting up develop"
-	mkdir -p $bin_dir
-	cd $bin_dir
-	git init;
+	mkdir -p ~/.develop
 	Develop_project_dir="$(ask_dir "Where should develop projects live?" 1)"
 	cat << EOF > ~/.develop/configuration
 # Develop configuration file, edit to your liking.
@@ -50,7 +47,7 @@ else
 Develop_project_dir="$Develop_project_dir"
 EOF
 	cat << EOF > ~/.develop/default_license
-(c) $USER, \$DATE
+(c) \$USER, \$DATE
 EOF
 	gvim ~/.develop/default_license
 fi
@@ -62,14 +59,14 @@ fi
 if [ -n "$1" ]; then
 	project="$1"
 	projectdir="$Develop_project_dir/$project"
-	if [ -f "$bin_dir/$project" ]; then
+	if [ -d "$projectdir" ]; then
 		if [ $existing_project -eq 0 ]; then
 			echo "$project already exists"
 			projectdir="$(ask_dir "Enter new project name:" 0 \
 				"$Develop_project_dir")"
 			project="`basename "projectdir"`" # FIXME: hack
 		else
-			source $bin_dir/$project
+			source $projectdir/scripts/dodev_$project.sh
 			exit 0;
 		fi
 	else
@@ -78,15 +75,15 @@ if [ -n "$1" ]; then
 			# TODO: create new / choose existing / quit
 			exit 1;
 		fi
-		mkdir "$projectdir"
+		mkdir -p "$projectdir/scripts"
 		#TODO: stat
 	fi
 fi
-script=$bin_dir/$project
+script="$projectdir/scripts/dodev_$project.sh
 
 DATE=`date +"%b %Y"`
 
-cp ~/.develop/default_license $projectdir/LICENSE
+sed "s/\$DATE/$DATE/; s/\$USER/$USER/" ~/.develop/default_license > $projectdir/LICENSE
 
 cat << EOF > $script
 #!/bin/bash
@@ -98,7 +95,7 @@ projectdir="$projectdir"
 cd "\$projectdir"
 
 # enter more project files to be opened by default here
-gvim -p10 "$script" \\
+gvim -p3 "$script" \\
   "\$projectdir/LICENSE"
   "\$projectdir/README"
 
