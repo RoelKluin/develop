@@ -90,7 +90,7 @@ if [ -n "$1" ]; then
 		#TODO: stat
 	fi
 fi
-script="$projectdir/scripts/dodev_$project.sh
+script="$projectdir/scripts/dodev_$project.sh"
 
 DATE=`date +"%b %Y"`
 
